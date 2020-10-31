@@ -11,8 +11,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func walk(input string) string {
-	var fileName string = ""
+func walk(input string) []string {
+	var fileNames []string
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			if strings.Contains(info.Name(), ".git") {
@@ -32,7 +32,7 @@ func walk(input string) string {
 
 			// fmt.Println("テキストの中身：", string(buf))
 			if strings.Contains(string(buf), input) {
-				fileName = info.Name()
+				fileNames = append(fileNames, info.Name())
 			}
 
 			file.Close()
@@ -43,17 +43,44 @@ func walk(input string) string {
 	if err != nil {
 		log.Fatal("err: %w", err)
 	}
-	return fileName
+	return fileNames
+}
+
+func output(results []string) {
+	for _, v := range results {
+		fmt.Printf("%s\n", v)
+	}
+}
+
+type RunMode string
+
+type Crawler struct {
+	mode RunMode
 }
 
 func main() {
-	input := os.Args[1]
-	result := walk(input)
 
-	if result == "" {
+	if len(os.Args) < 2 {
+		fmt.Printf("Please input option :(")
+		return
+	}
+
+	if len(os.Args) >= 2 {
+		fmt.Println("too much option given :(")
+		return
+	}
+
+	input := os.Args[1] // `jump` or `get`
+
+	switch os.Args[1] {
+	case "jump":
+
+	}
+	results := walk(input)
+	if len(results) == 0 {
 		fmt.Printf("fileが見つかりません。")
 	} else {
-		fmt.Printf("file: %s", result)
+		output(results)
 	}
 
 }
