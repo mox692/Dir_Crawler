@@ -42,20 +42,9 @@ func (c *Crawler) WalkToJump() error {
 		return nil
 	})
 
-	_, err = c.isSpecific()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil
-}
-
-func (c *Crawler) isSpecific() (bool, error) {
-	if len(c.results) == 0 {
-		return false, xerrors.New("no file found")
-	}
-	if len(c.results) > 1 {
-		return false, xerrors.New("ファイルがたくさんあります。")
-	}
-	return true, nil
 }

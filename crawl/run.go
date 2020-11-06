@@ -3,13 +3,8 @@ package crawl
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
-
-	"golang.org/x/xerrors"
 )
 
 type Crawler struct {
@@ -25,99 +20,10 @@ type Crawler struct {
 	result    string
 }
 
-func (c *Crawler) setMode() {
-
-}
-
-func (c *Crawler) walk() []string {
-
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-
-		if c.skipWalk {
-			return nil
-		}
-
-		// dirに対する処理
-		if info.IsDir() {
-			// .git系は飛ばす
-			if strings.Contains(info.Name(), ".git") {
-				return filepath.SkipDir
-			}
-		}
-
-		// fileに対する処理
-		if !(info.IsDir()) {
-			file, err := os.Open(path)
-			if err != nil {
-				return xerrors.Errorf("err: %w", err)
-			}
-
-			buf, err := ioutil.ReadAll(file)
-			if err != nil {
-				return xerrors.Errorf("err: %w", err)
-			}
-
-			if strings.Contains(string(buf), c.serchWord) {
-				c.results = append(c.results, info.Name())
-				if c.mode == "jump" {
-					c.path[info.Name()] = path
-				}
-			}
-			file.Close()
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatal("err: %w", err)
-	}
-
-	if c.jump != "" {
-		c.results = append(c.results, c.jumpToDir())
-		return c.results
-	}
-	return []string{}
-}
-
-func (c *Crawler) jumpToDir() string {
-
-	if len(c.results) > 1 {
-		c.results = append(c.results, "More than 2 files were found. Can't jump to several dir.")
-		return ""
-	}
-	if len(c.results) == 0 {
-		c.results = append(c.results, "No file found.")
-		return ""
-	}
-
-	c.skipWalk = true
-
-	path := c.path[c.results[0]]
-	if c.isCurrentDir(path) {
-		fmt.Printf("`%s` is in current directory.\n", path)
-		return ""
-	}
-
-	path = strings.Replace(path, c.results[0], "", 1)
-	err := os.Chdir(path)
-	if err != nil {
-		fmt.Printf("err: %s", err)
-		return ""
-	}
-
-	cwd2, err := os.Getwd()
-	if err != nil {
-		fmt.Printf("err: %s", err)
-		return ""
-	}
-	return cwd2
-}
-
-func (c *Crawler) isCurrentDir(path string) bool {
-	if strings.Contains(path, "/") {
-		return false
-	}
-	return true
-}
+var (
+	NO_FILE_FOUND        = "No file found."
+	MULTIPLE_FILES_FOUND = "Multiple files found. Can't jump several dir."
+)
 
 // Run はフラグの取得や、walk関数が返した結果をoutput関数に引き渡します。
 func Run() {
@@ -172,27 +78,21 @@ func Run() {
 		skipWalk:  false,
 	}
 
-	// results := crawler.walk()
+	// modeによって処理を切り分け
 	switch crawler.getMode() {
 	case "list":
 		err = crawler.WalkToList()
-
 	case "jump":
 		err = crawler.WalkToJump()
 	}
-	// *******************Todo: err処理
+
 	if err != nil {
-		log.Fatal("err: %w", err)
-	}
-	// 見つかったかの判定
-	ok := crawler.isExist()
-	if !ok {
-		fmt.Printf("fileが見つかりません。")
+		fmt.Println(err)
 		return
 	}
 
+	// 標準出力で描画
 	crawler.output()
-
 }
 
 func (c *Crawler) getMode() string {
@@ -209,7 +109,25 @@ func (c *Crawler) isExist() bool {
 }
 
 func (c *Crawler) output() {
-	for _, v := range c.results {
-		fmt.Printf("%s\n", v)
+
+	// マッチするファイルが見つかったかの判定
+	exist := c.isExist()
+	if !exist {
+		fmt.Println(NO_FILE_FOUND)
+		return
+	}
+
+	switch c.mode {
+	case "list":
+		for _, v := range c.results {
+			fmt.Printf("%s\n", v)
+		}
+	case "jump":
+		if len(c.results) > 1 {
+			fmt.Println(MULTIPLE_FILES_FOUND)
+		}
+		for _, v := range c.results {
+			fmt.Printf("%s\n", v)
+		}
 	}
 }
