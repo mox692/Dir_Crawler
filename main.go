@@ -2,8 +2,9 @@ package main
 
 import (
 	"dirWalk/crawl"
+	"os"
 )
 
 func main() {
-	crawl.Run()
+	os.Exit(crawl.Run())
 }

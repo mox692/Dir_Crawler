@@ -6,19 +6,18 @@ kw=$2
 
 # 実行
 result=$(./dirWalk --$action=$kw)
-
+status=$? ## 必須
 # jumpの時だけ、cdする
 if [ "$action" = "jump" ]; then
-    echo $result
     if [ "$result" = "" ]; then
-        return 0
-    fi 
-    # 抜き出し
-    # arr=(${result// / })
-    # echo ${arr}
+        return
+    # 以上終了の時    
+    elif [ $status != "0" ]; then  # !=だとうまくいかない...。
+    echo "$result"
+    # 正常時
+    else
     cd $result
+    fi
 else
-    echo $result
+    echo  "$result"
 fi
-
-# jump以外の時は、そのまま出力

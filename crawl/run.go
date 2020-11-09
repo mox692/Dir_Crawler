@@ -3,8 +3,9 @@ package crawl
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
+
+	"golang.org/x/xerrors"
 )
 
 type Crawler struct {
@@ -26,7 +27,7 @@ var (
 )
 
 // Run はフラグの取得や、walk関数が返した結果をoutput関数に引き渡します。
-func Run() {
+func Run() int {
 
 	// フラグでfilenameの取得
 	var (
@@ -43,7 +44,7 @@ func Run() {
 	// list,jump,getが重複していたらerr
 	if list != "" && jump != "" || jump != "" && get != "" || get != "" && list != "" {
 		fmt.Printf("choose only 1 option from `list`, `get`, `jump`\n")
-		return
+		return 1
 	}
 
 	// modeをセット
@@ -64,7 +65,8 @@ func Run() {
 
 	root, err := os.Getwd()
 	if err != nil {
-		log.Fatal("err: %w", err)
+		fmt.Println(err)
+		return 1
 	}
 
 	crawler := &Crawler{
@@ -88,11 +90,17 @@ func Run() {
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return 1
 	}
 
 	// 標準出力で描画
-	crawler.output()
+	err = crawler.output()
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
+
+	return 0
 }
 
 func (c *Crawler) getMode() string {
@@ -108,13 +116,12 @@ func (c *Crawler) isExist() bool {
 	}
 }
 
-func (c *Crawler) output() {
+func (c *Crawler) output() error {
 
 	// マッチするファイルが見つかったかの判定
 	exist := c.isExist()
 	if !exist {
-		fmt.Println(NO_FILE_FOUND)
-		return
+		return xerrors.Errorf(NO_FILE_FOUND)
 	}
 
 	switch c.mode {
@@ -124,10 +131,11 @@ func (c *Crawler) output() {
 		}
 	case "jump":
 		if len(c.results) > 1 {
-			fmt.Println(MULTIPLE_FILES_FOUND)
+			return xerrors.Errorf(MULTIPLE_FILES_FOUND)
 		}
 		for _, v := range c.results {
 			fmt.Printf("%s\n", v)
 		}
 	}
+	return nil
 }
