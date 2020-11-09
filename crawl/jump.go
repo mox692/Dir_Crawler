@@ -5,13 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/xerrors"
 )
 
 func (c *Crawler) WalkToJump() error {
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		// dirに対する処理
 		if info.IsDir() {
 			// .git系は飛ばす
@@ -24,12 +22,12 @@ func (c *Crawler) WalkToJump() error {
 		if !(info.IsDir()) {
 			file, err := os.Open(path)
 			if err != nil {
-				return xerrors.Errorf("err: %w", err)
+				return err
 			}
 
 			buf, err := ioutil.ReadAll(file)
 			if err != nil {
-				return xerrors.Errorf("err: %w", err)
+				return err
 			}
 
 			if strings.Contains(string(buf), c.serchWord) {
@@ -41,10 +39,8 @@ func (c *Crawler) WalkToJump() error {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

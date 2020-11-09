@@ -22,8 +22,8 @@ type Crawler struct {
 }
 
 var (
-	NO_FILE_FOUND        = "No file found."
-	MULTIPLE_FILES_FOUND = "Multiple files found. Can't jump several dir."
+	NO_FILE_FOUND        = "! No file found."
+	MULTIPLE_FILES_FOUND = "! Multiple files found. Can't jump several dir."
 )
 
 // Run はフラグの取得や、walk関数が返した結果をoutput関数に引き渡します。
@@ -126,16 +126,34 @@ func (c *Crawler) output() error {
 
 	switch c.mode {
 	case "list":
-		for _, v := range c.results {
-			fmt.Printf("%s\n", v)
-		}
+		c.write()
 	case "jump":
 		if len(c.results) > 1 {
+			fmt.Println(MULTIPLE_FILES_FOUND)
+			fmt.Println("-------------------------------------")
+			c.write()
+			fmt.Println("-------------------------------------")
 			return xerrors.Errorf(MULTIPLE_FILES_FOUND)
 		}
+		c.write()
+	}
+	return nil
+}
+
+func (c *Crawler) write() {
+	switch c.mode {
+	case "jump":
+		if len(c.results) == 1 {
+			fmt.Printf("%s\n", c.results[0])
+			return
+		}
+
+		for _, value := range c.path {
+			fmt.Printf("%s\n", value)
+		}
+	default:
 		for _, v := range c.results {
 			fmt.Printf("%s\n", v)
 		}
 	}
-	return nil
 }
