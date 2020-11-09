@@ -126,16 +126,29 @@ func (c *Crawler) output() error {
 
 	switch c.mode {
 	case "list":
-		for _, v := range c.results {
-			fmt.Printf("%s\n", v)
-		}
+		c.write()
 	case "jump":
 		if len(c.results) > 1 {
+			fmt.Println(MULTIPLE_FILES_FOUND)
+			fmt.Println("-------------------------------------")
+			c.write()
 			return xerrors.Errorf(MULTIPLE_FILES_FOUND)
 		}
+		c.write()
+	}
+	return nil
+}
+
+func (c *Crawler) write() {
+	switch c.mode {
+	case "jump":
+		for _, value := range c.path {
+			fmt.Printf("%s\n", value)
+		}
+
+	default:
 		for _, v := range c.results {
 			fmt.Printf("%s\n", v)
 		}
 	}
-	return nil
 }
