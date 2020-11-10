@@ -3,11 +3,16 @@ package crawl
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"golang.org/x/xerrors"
 )
 
+// Crawler はディレクトリをクロールするためのstructです。
+// userから引き受けたコマンド等を格納したり、見つかったfileの格納を行います。
 type Crawler struct {
 	rootDir   string
 	results   []string
@@ -22,14 +27,15 @@ type Crawler struct {
 }
 
 var (
-	NO_FILE_FOUND        = "! No file found."
-	MULTIPLE_FILES_FOUND = "! Multiple files found. Can't jump several dir."
+	// NoFileFound はkeywordにマッチするfileが見つからなかった事を知らせます。
+	NoFileFound = "! No file found."
+	// MultipleFilesFound はjumpコマンドを選択した際に、keywordにマッチしたfileが複数存在した事を知らせます。
+	MultipleFilesFound = "! Multiple files found. Can't jump several dir."
 )
 
 // Run はフラグの取得や、walk関数が返した結果をoutput関数に引き渡します。
 func Run() int {
 
-	// フラグでfilenameの取得
 	var (
 		list string
 		get  string
@@ -41,13 +47,12 @@ func Run() int {
 
 	flag.Parse()
 
-	// list,jump,getが重複していたらerr
+	// list,jump,getが重複していたらerrを返します。
 	if list != "" && jump != "" || jump != "" && get != "" || get != "" && list != "" {
 		fmt.Printf("choose only 1 option from `list`, `get`, `jump`\n")
 		return 1
 	}
 
-	// modeをセット
 	var mode, serchWord string
 
 	if list != "" {
@@ -103,6 +108,79 @@ func Run() int {
 	return 0
 }
 
+// WalkToList は配下のディレクトリをクロールして、キーワードマッチしたファイルをresultsに格納していきます。
+func (c *Crawler) WalkToList() error {
+
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		// dirに対する処理
+		if info.IsDir() {
+			// .git系は飛ばす
+			if strings.Contains(info.Name(), ".git") {
+				return filepath.SkipDir
+			}
+		}
+
+		// fileに対する処理
+		if !(info.IsDir()) {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+
+			buf, err := ioutil.ReadAll(file)
+			if err != nil {
+				return err
+			}
+
+			if strings.Contains(string(buf), c.serchWord) {
+				c.results = append(c.results, path)
+			}
+			file.Close()
+		}
+		return nil
+	})
+	return err
+}
+
+// WalkToJump は配下のディレクトリをクロールして、キーワードマッチしたファイルが存在するDirを取得します。
+func (c *Crawler) WalkToJump() error {
+
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		// dirに対する処理
+		if info.IsDir() {
+			// .git系は飛ばす
+			if strings.Contains(info.Name(), ".git") {
+				return filepath.SkipDir
+			}
+		}
+
+		// fileに対する処理
+		if !(info.IsDir()) {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+
+			buf, err := ioutil.ReadAll(file)
+			if err != nil {
+				return err
+			}
+
+			if strings.Contains(string(buf), c.serchWord) {
+				c.path[info.Name()] = path
+				dirName := strings.Replace(path, info.Name(), "", 1)
+				c.results = append(c.results, dirName)
+			}
+			file.Close()
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Crawler) getMode() string {
 	return c.mode
 }
@@ -117,11 +195,9 @@ func (c *Crawler) isExist() bool {
 }
 
 func (c *Crawler) output() error {
-
-	// マッチするファイルが見つかったかの判定
 	exist := c.isExist()
 	if !exist {
-		return xerrors.Errorf(NO_FILE_FOUND)
+		return xerrors.Errorf(NoFileFound)
 	}
 
 	switch c.mode {
@@ -129,11 +205,11 @@ func (c *Crawler) output() error {
 		c.write()
 	case "jump":
 		if len(c.results) > 1 {
-			fmt.Println(MULTIPLE_FILES_FOUND)
+			fmt.Println(MultipleFilesFound)
 			fmt.Println("-------------------------------------")
 			c.write()
 			fmt.Println("-------------------------------------")
-			return xerrors.Errorf(MULTIPLE_FILES_FOUND)
+			return xerrors.Errorf(MultipleFilesFound)
 		}
 		c.write()
 	}
