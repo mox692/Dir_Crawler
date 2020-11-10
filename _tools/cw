@@ -3,8 +3,10 @@
 action=$1
 kw=$2
 
-result=$(./dirWalk --$action=$kw)
+### !バイナリ(dirWalk)のpathに合わせて変更してください 
+result=$(../dirWalk --$action=$kw)
 status=$? 
+
 ### `jump`コマンドの時
 if [ "$action" = "jump" ]; then
     if [ "$result" = "" ]; then
@@ -17,6 +19,7 @@ if [ "$action" = "jump" ]; then
     else
     cd $result
     fi
+    
 ### `jump`コマンド以外の時は単純に出力
 else
     echo  "$result"
