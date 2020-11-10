@@ -1,0 +1,26 @@
+#!/bin/sh
+
+action=$1
+kw=$2
+
+### !バイナリ(dirWalk)のpathに合わせて変更してください 
+result=$(../dirWalk --$action=$kw)
+status=$? 
+
+### `jump`コマンドの時
+if [ "$action" = "jump" ]; then
+    if [ "$result" = "" ]; then
+        return
+
+    ### !以上終了の時    
+    elif [ $status != "0" ]; then
+    echo "$result"
+    ### 正常時
+    else
+    cd $result
+    fi
+    
+### `jump`コマンド以外の時は単純に出力
+else
+    echo  "$result"
+fi
