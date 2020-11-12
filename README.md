@@ -12,7 +12,7 @@ so that you can use `--jump` command.
 ![dirclole_flow](https://user-images.githubusercontent.com/55653825/98936227-0653b200-2528-11eb-82af-bf1058a283e9.png)  
 
 ## Commands
-**There are 2 sub commands.**
+There are 2 sub commands.  
 
 ### list
 `list` lists files that match the keyword.  
