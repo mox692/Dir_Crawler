@@ -1,7 +1,7 @@
 ## ABOUT
-・Dir_Crawler is directory croler.
-・You can find files by keywords that is in file or filename.
-・You can also jump to directory where finding file is in.
+・Dir_Crawler help you to find files when you lost the path of it.   
+・You can find files by keyword which is in file or filename.  
+・You can also jump to directory where finding file is in.  
 
 ## Install
 Access the [release page](https://github.com/mox692/ChromeExtention_SettingTimer/releases) or `git clone`.  
